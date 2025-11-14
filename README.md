@@ -139,4 +139,4 @@ After a successful build, the executable will be found in the `dist/` directory 
 
 ## License
 
-Same as parent project.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Copyright (c) 2025 Tan Tran.
