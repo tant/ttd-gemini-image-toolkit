@@ -1,19 +1,16 @@
 import argparse
-import mimetypes
+import io
 import os
 import sys
 import time
 from dotenv import load_dotenv
+from PIL import Image
 from google import genai
-from google.genai import types
 
-MODEL_NAME = "gemini-2.5-flash-image-preview"
+MODEL_NAME = "gemini-2.5-flash-image"
 
 
-def generate_image(
-    prompt: str,
-    output_dir: str,
-):
+def generate_image(prompt: str, output_dir: str):
     """
     Generates an image using the Google Generative AI model.
 
@@ -21,57 +18,38 @@ def generate_image(
         prompt: The prompt for generating the image.
         output_dir: Directory to save the generated image.
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set.")
+    try:
+        client = genai.GenerativeModel(model=MODEL_NAME)
 
-    client = genai.Client(api_key=api_key)
+        print(f"Generating image with prompt: {prompt}")
 
-    contents = [genai.types.Part.from_text(text=prompt)]
+        response = client.generate_content(
+            contents=[prompt],
+            generation_config=genai.GenerationConfig(
+                response_mime_type="image/png",
+            ),
+        )
 
-    generate_content_config = types.GenerateContentConfig(
-        response_modalities=["IMAGE"],
-    )
+        if response.candidates and response.candidates[0].content.parts:
+            for i, part in enumerate(response.candidates[0].content.parts):
+                if part.inline_data:
+                    image_data = part.inline_data.data
+                    image = Image.open(io.BytesIO(image_data))
+                    timestamp = int(time.time())
+                    file_name = os.path.join(
+                        output_dir, f"generated_image_{timestamp}_{i}.png"
+                    )
+                    image.save(file_name)
+                    print(f"Image successfully generated and saved to {file_name}")
+                elif part.text:
+                    print(f"Text response received: {part.text}")
+        else:
+            print("No image data found in the response.")
+            if response.prompt_feedback:
+                print(f"Prompt feedback: {response.prompt_feedback}")
 
-    print(f"Generating image with prompt: {prompt}")
-
-    stream = client.models.generate_content_stream(
-        model=MODEL_NAME,
-        contents=contents,
-        config=generate_content_config,
-    )
-
-    _process_api_stream_response(stream, output_dir)
-
-
-def _process_api_stream_response(stream, output_dir: str):
-    """Processes the streaming response from the GenAI API, saving images and printing text."""
-    file_index = 0
-    for chunk in stream:
-        if (
-            chunk.candidates is None
-            or chunk.candidates[0].content is None
-            or chunk.candidates[0].content.parts is None
-        ):
-            continue
-
-        for part in chunk.candidates[0].content.parts:
-            if part.inline_data and part.inline_data.data:
-                timestamp = int(time.time())
-                file_extension = mimetypes.guess_extension(part.inline_data.mime_type)
-                file_name = os.path.join(
-                    output_dir,
-                    f"generated_image_{timestamp}_{file_index}{file_extension}",
-                )
-                _save_binary_file(file_name, part.inline_data.data)
-                file_index += 1
-
-
-def _save_binary_file(file_name: str, data: bytes):
-    """Saves binary data to a specified file."""
-    with open(file_name, "wb") as f:
-        f.write(data)
-    print(file_name)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 def cli(argv):
@@ -98,14 +76,12 @@ def cli(argv):
 
     args = parser.parse_args(argv)
 
-    # Determine the prompt
     if args.prompt_file:
         with open(args.prompt_file, "r") as f:
             final_prompt = f.read()
     else:
         final_prompt = args.prompt
 
-    # Ensure output directory exists
     output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
 
@@ -117,6 +93,10 @@ def cli(argv):
 
 def main():
     load_dotenv()
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable not set.")
+    genai.configure(api_key=api_key)
     cli(sys.argv[1:])
 
 
