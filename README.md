@@ -12,7 +12,8 @@ The TTD Gemini Image Toolkit is a powerful command-line interface (CLI) tool des
 
 ## Features
 
-*   **Image Generation:** Create diverse images from descriptive text prompts using `gemini-2.5-flash-image`.
+*   **Image Generation:** Create diverse images from descriptive text prompts using `imagen-4.0-generate-001` (Imagen v4). For higher quality or speed tradeoffs you can use `imagen-4.0-ultra-generate-001` or `imagen-4.0-fast-generate-001`.
+*   **Image Generation Options:** CLI flags let you choose the Imagen v4 variant and output parameters (`--model`, `--number-of-images`, `--image-size`, `--person-generation`).
 *   **Text Overlay:** Add custom text to existing images with options for font size, color, and precise positioning.
 *   **Generative Refinement:** Refine images by providing a prompt that guides the AI to generate a new image incorporating desired changes (e.g., "make the sky bluer").
 *   **Generative Editing:** Edit images by instructing the AI to replace or modify elements within an image (e.g., "remove the car and replace it with a bicycle").
@@ -64,6 +65,19 @@ You can specify an output directory (defaults to `output`):
 uv run python ttd_gemini_image_toolkit.py generate --prompt "A serene landscape" --output-dir my_images
 ```
 
+The `generate` command supports additional flags to control the Imagen model and outputs:
+
+- `--model`: Imagen model to use (default `imagen-4.0-generate-001`). Examples: `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001`, `imagen-4.0-fast-generate-001`.
+- `--number-of-images`: Number of images to request (1-4).
+- `--image-size`: Image size to request; supported values `1K` or `2K` (model-dependent).
+- `--person-generation`: Controls person generation: `dont_allow`, `allow_adult`, `allow_all` (note: `allow_all` may be restricted in some regions).
+
+Example requesting 3 images at 2K using the ultra model:
+
+```bash
+uv run python ttd_gemini_image_toolkit.py generate --prompt "A futuristic cityscape at sunset" --model imagen-4.0-ultra-generate-001 --number-of-images 3 --image-size 2K --output-dir my_images
+```
+
 ### Add Text to an Image
 
 Add text to an existing image:
@@ -85,7 +99,7 @@ Available positions: `top-left`, `top-center`, `top-right`, `middle-left`, `cent
 The `refine` and `edit` subcommands allow you to modify existing images using a two-step generative process:
 
 1.  **Analyze and Describe:** The input image and your prompt/instruction are sent to the `gemini-pro-vision` model, which generates a detailed text description of a *new image* incorporating your requested changes.
-2.  **Generate New Image:** This text description is then used as a prompt for the `gemini-2.5-flash-image` model to generate the final, modified image.
+2.  **Generate New Image:** This text description is then used as a prompt for an Imagen v4 model (for example `imagen-4.0-generate-001`) to generate the final, modified image.
 
 **Refine an image:**
 
@@ -103,7 +117,13 @@ uv run python ttd_gemini_image_toolkit.py edit --input-image path/to/original.pn
 
 ## Model
 
-Uses `gemini-2.5-flash-image` model for fast, high-quality image generation.
+This toolkit uses the Imagen v4 family for text-to-image generation. By default the CLI uses `imagen-4.0-generate-001`, but you can override the model with the `--model` flag to pick variants such as:
+
+- `imagen-4.0-generate-001` — Standard Imagen v4 generation (balanced quality and cost).
+- `imagen-4.0-ultra-generate-001` — Higher-quality / higher-resolution outputs (may cost more and be slower).
+- `imagen-4.0-fast-generate-001` — Lower-latency generation that trades some quality for speed.
+
+Under the hood the script calls the Gemini SDK's image generation endpoint (`client.models.generate_images`) and supports configuring `number_of_images`, `image_size`, and `person_generation` via the CLI.
 
 ## Troubleshooting
 

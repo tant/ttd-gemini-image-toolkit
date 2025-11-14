@@ -6,48 +6,77 @@ import time
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
+from google.genai import types
 
-MODEL_NAME = "gemini-2.5-flash-image"
+MODEL_NAME = "imagen-4.0-generate-001"
 VISION_MODEL_NAME = "gemini-pro-vision" # New constant for vision model
 
 
-def generate_image_core(prompt: str, output_dir: str):
+def generate_image_core(
+    prompt: str,
+    output_dir: str,
+    model: str = MODEL_NAME,
+    number_of_images: int = 1,
+    image_size: str = "1K",
+    person_generation: str = "allow_adult",
+):
     """
-    Generates an image using the Google Generative AI model.
+    Generates an image using the Google Generative AI Imagen v4 models.
 
     Args:
         prompt: The prompt for generating the image.
         output_dir: Directory to save the generated image.
+        model: Imagen model to use (e.g. imagen-4.0-generate-001).
+        number_of_images: How many images to request (1-4).
+        image_size: `1K` or `2K` (if supported by the model).
+        person_generation: `dont_allow`, `allow_adult`, or `allow_all`.
     """
     try:
-        client = genai.GenerativeModel(model=MODEL_NAME)
+        client = genai.Client()
 
-        print(f"Generating image with prompt: {prompt}")
-
-        response = client.generate_content(
-            contents=[prompt],
-            generation_config=genai.GenerationConfig(
-                response_mime_type="image/png",
-            ),
+        print(
+            f"Generating image with model={model}, image_size={image_size}, number_of_images={number_of_images}"
         )
 
-        if response.candidates and response.candidates[0].content.parts:
-            for i, part in enumerate(response.candidates[0].content.parts):
-                if part.inline_data:
-                    image_data = part.inline_data.data
-                    image = Image.open(io.BytesIO(image_data))
+        config = types.GenerateImagesConfig(
+            number_of_images=number_of_images,
+            image_size=image_size,
+            person_generation=person_generation,
+        )
+
+        response = client.models.generate_images(model=model, prompt=prompt, config=config)
+
+        if getattr(response, "generated_images", None):
+            for i, gen_img in enumerate(response.generated_images):
+                try:
+                    img_val = getattr(gen_img, "image", None)
+                    if img_val is None:
+                        print(f"Generated image {i} has no .image attribute; skipping.")
+                        continue
+
+                    # If SDK returns raw bytes
+                    if isinstance(img_val, (bytes, bytearray)):
+                        image = Image.open(io.BytesIO(img_val))
+                    else:
+                        # If it's already a PIL Image-like object, try to use it directly
+                        try:
+                            image = img_val
+                        except Exception:
+                            # Fallback: try to read a data attribute
+                            data = getattr(img_val, "data", None)
+                            if isinstance(data, (bytes, bytearray)):
+                                image = Image.open(io.BytesIO(data))
+                            else:
+                                raise
+
                     timestamp = int(time.time())
-                    file_name = os.path.join(
-                        output_dir, f"generated_image_{timestamp}_{i}.png"
-                    )
+                    file_name = os.path.join(output_dir, f"generated_image_{timestamp}_{i}.png")
                     image.save(file_name)
                     print(f"Image successfully generated and saved to {file_name}")
-                elif part.text:
-                    print(f"Text response received: {part.text}")
+                except Exception as e:
+                    print(f"Failed to save generated image {i}: {e}")
         else:
-            print("No image data found in the response.")
-            if response.prompt_feedback:
-                print(f"Prompt feedback: {response.prompt_feedback}")
+            print("No generated_images found in response.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -93,7 +122,14 @@ def generate_image_command(args):
         final_prompt = args.prompt
 
     os.makedirs(args.output_dir, exist_ok=True)
-    generate_image_core(prompt=final_prompt, output_dir=args.output_dir)
+    generate_image_core(
+        prompt=final_prompt,
+        output_dir=args.output_dir,
+        model=args.model,
+        number_of_images=args.number_of_images,
+        image_size=args.image_size,
+        person_generation=args.person_generation,
+    )
 
 
 def _add_text_to_image(
@@ -227,6 +263,33 @@ def cli(argv):
         type=str,
         default="output",
         help="Directory to save the generated images.",
+    )
+    generate_parser.add_argument(
+        "--model",
+        type=str,
+        default=MODEL_NAME,
+        help="Imagen model to use (e.g. imagen-4.0-generate-001).",
+    )
+    generate_parser.add_argument(
+        "--number-of-images",
+        type=int,
+        default=1,
+        choices=[1, 2, 3, 4],
+        help="Number of images to generate (1-4).",
+    )
+    generate_parser.add_argument(
+        "--image-size",
+        type=str,
+        default="1K",
+        choices=["1K", "2K"],
+        help="Image size to request (1K or 2K).",
+    )
+    generate_parser.add_argument(
+        "--person-generation",
+        type=str,
+        default="allow_adult",
+        choices=["dont_allow", "allow_adult", "allow_all"],
+        help="Controls generation of people in images.",
     )
     generate_parser.set_defaults(func=generate_image_command)
 
