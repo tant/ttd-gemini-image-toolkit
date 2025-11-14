@@ -105,6 +105,36 @@ Uses `gemini-2.5-flash-image` model for fast, high-quality image generation.
 
 After installation, you can run the script using `uv run python ttd_gemini_image_toolkit.py <command> ...`
 
+## Generating Standalone Executables
+
+You can package this application into a standalone executable that can be run without a Python installation. This is done using PyInstaller.
+
+**Important Note:** PyInstaller creates executables specific to the operating system it is run on. To get an executable for Windows, you must run PyInstaller on a Windows machine. Similarly, for macOS, you must run it on a macOS machine.
+
+### Prerequisites for Executable Generation
+
+1.  **Python and `uv`**: Ensure Python (3.10+) and `uv` are installed on the target OS.
+2.  **PyInstaller**: Install PyInstaller into your project's virtual environment:
+    ```bash
+    uv pip install pyinstaller
+    ```
+3.  **System Dependencies (Linux only)**: On Linux, you might need `binutils` (which provides `objdump`). Install it using your distribution's package manager (e.g., `sudo apt-get install binutils` on Debian/Ubuntu).
+
+### Steps to Generate Executable
+
+1.  **Navigate to the project directory.**
+2.  **Activate your virtual environment** (if not already active, though `uv run` handles this).
+3.  **Run PyInstaller**:
+    ```bash
+    .venv/bin/pyinstaller --onefile --name ttd_gemini_image_toolkit --add-data ".env.sample:." ttd_gemini_image_toolkit.py
+    ```
+    *   `--onefile`: Packages the application into a single executable file.
+    *   `--name ttd_gemini_image_toolkit`: Sets the name of the executable.
+    *   `--add-data ".env.sample:."`: Includes the `.env.sample` file, making it accessible to the executable.
+
+### Locating the Executable
+
+After a successful build, the executable will be found in the `dist/` directory within your project folder. For example, on Linux, it will be `dist/ttd_gemini_image_toolkit`.
 
 
 ## License
