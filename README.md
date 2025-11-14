@@ -1,6 +1,24 @@
 # TTD Gemini Image Toolkit
 
-This toolkit provides a command-line interface for generating, manipulating, and generatively editing images using Google Gemini AI.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Overview
+
+The TTD Gemini Image Toolkit is a powerful command-line interface (CLI) tool designed for seamless interaction with Google Gemini AI for image generation, manipulation, and generative editing. This toolkit empowers users to create new images from text prompts, add text overlays to existing images, and intelligently refine or edit images through a two-step generative process.
+
+## Repository
+
+**GitHub:** [https://github.com/tant/ttd-gemini-image-toolkit](https://github.com/tant/ttd-gemini-image-toolkit)
+
+## Features
+
+*   **Image Generation:** Create diverse images from descriptive text prompts using `gemini-2.5-flash-image`.
+*   **Text Overlay:** Add custom text to existing images with options for font size, color, and precise positioning.
+*   **Generative Refinement:** Refine images by providing a prompt that guides the AI to generate a new image incorporating desired changes (e.g., "make the sky bluer").
+*   **Generative Editing:** Edit images by instructing the AI to replace or modify elements within an image (e.g., "remove the car and replace it with a bicycle").
+*   **Flexible Input:** Generate images from direct prompts or content from a file.
+*   **Output Management:** Specify output directories for organized storage of generated and edited images.
+*   **Standalone Executables:** Package the application into a single executable for easy distribution and use without a Python environment.
 
 ## Setup
 
@@ -10,20 +28,21 @@ This toolkit provides a command-line interface for generating, manipulating, and
 
 ### Installation
 
+```bash
 uv sync
 ```
 
 ### Configuration
 
-Set your Google Gemini API key in `.env`:
+Set your Google Gemini API key in a `.env` file in the project root:
 
-```bash
+```
 GEMINI_API_KEY="your-api-key-here"
 ```
 
 ## Usage
 
-The `ttd_gemini_image_toolkit.py` script now uses subcommands to perform different operations.
+The `ttd_gemini_image_toolkit.py` script uses subcommands to perform different operations.
 
 ### Generate Images
 
@@ -86,10 +105,6 @@ uv run python ttd_gemini_image_toolkit.py edit --input-image path/to/original.pn
 
 Uses `gemini-2.5-flash-image` model for fast, high-quality image generation.
 
-
-
-
-
 ## Troubleshooting
 
 ### API Key Issues
@@ -136,7 +151,14 @@ You can package this application into a standalone executable that can be run wi
 
 After a successful build, the executable will be found in the `dist/` directory within your project folder. For example, on Linux, it will be `dist/ttd_gemini_image_toolkit`.
 
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Copyright (c) 2025 Tan Tran.
+
+## Contributing
+
+Contributions are welcome! If you have suggestions for improvements, new features, or bug fixes, please open an issue or submit a pull request on the [GitHub repository](https://github.com/tant/ttd-gemini-image-toolkit).
+
+## Contact
+
+For questions or support, please open an issue on the [GitHub repository](https://github.com/tant/ttd-gemini-image-toolkit).
