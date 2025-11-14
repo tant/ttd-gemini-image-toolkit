@@ -1,5 +1,5 @@
 [project]
-name = "nano-banana-python"
+name = "ttd-gemini-image-toolkit"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = ["google-genai", "python-dotenv", "Pillow"]
